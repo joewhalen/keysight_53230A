@@ -52,8 +52,7 @@ class FigureFrame(tk.Frame):
 		self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 	def redraw(self, data=[]):
-		self.y = rng.random(len(self.x))
-		self.line.set_data(self.x, self.y)
+		self.line.set_data(data)
 		self.canvas.draw()
 
 
