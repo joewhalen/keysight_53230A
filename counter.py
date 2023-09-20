@@ -2,37 +2,60 @@ import pyvisa
 import zmq
 import config
 from time import sleep
+from numpy.random import default_rng
+
 
 class Counter(object):
 
-	def __init__(self):
+	def __init__(self, virtual=False):
 		# define the counter parameters and the socket
-		context = zmq.Context()
-		rm = pyvisa.ResourceManager()
+		self.virtual = virtual
 
+		context = zmq.Context()		
 		self.socket = context.socket(zmq.PUB)
 		self.socket.bind('tcp://*:'+config.PORT)
-		self.inst = rm.open_resource(config.USB_ID)
-
-		self.inst.write('*RST')
-		self.inst.write(f'SENS:FREQ:GATE:TIME {config.GATE_TIME}; SENS:FREQ:MODE REC;')
-		self.inst.write('TRIG:SOUR IMM; COUN MAX;')
-		self.inst.write('SAMP:COUN MAX')
+		
+		if not self.virtual:
+			rm = pyvisa.ResourceManager()
+			self.inst = rm.open_resource(config.USB_ID)
+			self.inst.write('*RST')
+			self.inst.write(f'SENS:FREQ:GATE:TIME {config.GATE_TIME}; SENS:FREQ:MODE REC;')
+			self.inst.write('TRIG:SOUR IMM; COUN MAX;')
+			self.inst.write('SAMP:COUN MAX')		
 
 
 	def start_stream(self):
-		self.inst.write('INIT')
-		sleep(config.GATE_TIME)
 
-		while True:
-			r = self.inst.query('R?')
-			if r != '#10\n':
-				while r[0] != '+':
-					r = r[1:]
+		if self.virtual:
+			rng = default_rng()
+			f0 = 79.860e6
+			sigma = 100
+			while True:
+				r = ','.join(['%+.15e'%i for i in f0 + sigma * rng.standard_normal(5+rng.integers(-2,2))])+'\n'
+				print(r)
 				self.socket.send_string(r)
+				sleep(1)
+		else:
+			self.inst.write('INIT')
+			sleep(config.GATE_TIME)
 
-			sleep(config.TIME_BETWEEN_READS)
+			while True:
+				r = self.inst.query('R?')
+				if r != '#10\n':
+					while r[0] != '+':
+						r = r[1:]
+					self.socket.send_string(r)
+
+				sleep(config.TIME_BETWEEN_READS)
 
 
-myCounter = Counter()
-myCounter.start_stream()
+if __name__ == '__main__':
+
+	import sys
+
+	virtual = False
+	if sys.argv[1] == '-v':
+		virtual = True
+	
+	myCounter = Counter(virtual)
+	myCounter.start_stream()
