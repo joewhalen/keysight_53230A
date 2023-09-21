@@ -5,16 +5,15 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
+import seaborn as sns
+sns.set_palette('colorblind')
+
 import allantools as at
-
-from numpy.random import default_rng
 import numpy as np
-
 import zmq
-
 import config
 
-rng = default_rng()
+import time
 
 class MyApp(tk.Tk):
 
@@ -39,6 +38,12 @@ class MyApp(tk.Tk):
 
 		self.allan_dev_fig.ax.set_xscale('log')
 		self.allan_dev_fig.ax.set_yscale('log')
+		self.allan_dev_fig.ax.set_xlabel('Averaging Time $\\tau$ (s)')
+		self.allan_dev_fig.ax.set_ylabel('Overlapping Allan Deviation')
+		self.allan_dev_fig.line.set_linestyle('-')
+		self.allan_dev_fig.line.set_marker('o')
+		self.allan_dev_fig.ax.grid(which='minor',alpha=0.5)
+		self.allan_dev_fig.ax.grid()
 
 		go_button = tk.Button(text='GO', command = self.read_data_stream)
 		quit_button = tk.Button(text='Quit', command = self.destroy)
@@ -56,7 +61,7 @@ class MyApp(tk.Tk):
 	def read_data_stream(self):
 		
 		r = np.array([float(i) for i in self.socket.recv_string().split(',')])
-		print(r)
+
 		if self.initialized:
 			self.t = np.concatenate((self.t, np.arange(len(r))*config.GATE_TIME + self.t[-1]))
 		else:
@@ -74,9 +79,11 @@ class MyApp(tk.Tk):
 
 	def update_allan_dev(self):
 
+		t = time.time()
 		taus, ad, ade, ns = at.oadev(self.f, rate=1/config.GATE_TIME, data_type='freq')
 		self.allan_dev_fig.redraw(x=taus, y=ad)
-
+		print(time.time()-t)
+		
 		self.after(self.allan_update_time * 1000, self.update_allan_dev)
 
 
@@ -87,8 +94,8 @@ class FigureFrame(tk.Frame):
 		
 		tk.Frame.__init__(self, parent)
 		
-		self.x = np.linspace(0,10,100)
-		self.y = rng.random(len(self.x))
+		self.x = []
+		self.y = []
 
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.ax = self.fig.add_subplot()
