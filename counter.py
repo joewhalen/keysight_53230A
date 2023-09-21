@@ -31,7 +31,9 @@ class Counter(object):
 			f0 = 79.860e6
 			sigma = 100
 			while True:
-				r = ','.join(['%+.15e'%i for i in f0 + sigma * rng.standard_normal(5+rng.integers(-2,2))])+'\n'
+				num = int(config.TIME_BETWEEN_READS/config.GATE_TIME + rng.integers(-2,2))
+				freqs = f0 + sigma*rng.standard_normal(num)
+				r = ','.join(['%+.15e'%i for i in freqs])+'\n'
 				print(r)
 				self.socket.send_string(r)
 				sleep(1)
