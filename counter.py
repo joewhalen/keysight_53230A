@@ -56,8 +56,9 @@ if __name__ == '__main__':
 	import sys
 
 	virtual = False
-	if sys.argv[1] == '-v':
-		virtual = True
+	if len(sys.argv) > 1:
+		if sys.argv[1] == '-v':
+			virtual = True
 	
 	myCounter = Counter(virtual)
 	myCounter.start_stream()
