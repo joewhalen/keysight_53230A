@@ -63,7 +63,7 @@ class MyApp(tk.Tk):
 		r = np.array([float(i) for i in self.socket.recv_string().split(',')])
 
 		if self.initialized:
-			self.t = np.concatenate((self.t, np.arange(len(r))*config.GATE_TIME + self.t[-1]))
+			self.t = np.concatenate((self.t, np.arange(1,len(r)+1)*config.GATE_TIME + self.t[-1]))
 		else:
 			self.t = np.concatenate((self.t, np.arange(len(r))*config.GATE_TIME))
 			self.initialized = True
@@ -80,8 +80,9 @@ class MyApp(tk.Tk):
 	def update_allan_dev(self):
 
 		t = time.time()
-		taus, ad, ade, ns = at.oadev(self.f, rate=1/config.GATE_TIME, data_type='freq')
-		self.allan_dev_fig.redraw(x=taus, y=ad)
+		if len(self.f) > 2:
+			taus, ad, ade, ns = at.oadev(self.f, rate=1/config.GATE_TIME, data_type='freq')
+			self.allan_dev_fig.redraw(x=taus, y=ad)
 		print(time.time()-t)
 		
 		self.after(self.allan_update_time * 1000, self.update_allan_dev)
