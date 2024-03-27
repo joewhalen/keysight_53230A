@@ -19,8 +19,9 @@ class Counter(object):
 			rm = pyvisa.ResourceManager()
 			self.inst = rm.open_resource(config.USB_ID)
 			self.inst.write('*RST')
-			self.inst.write(f'SENS:FREQ:GATE:TIME {config.GATE_TIME}; SENS:FREQ:MODE REC;')
-			self.inst.write('TRIG:SOUR IMM; COUN MAX;')
+			self.inst.write(f'SENS:FREQ:MODE RCON;')
+			self.inst.write(f'SENS:FREQ:GATE:TIME {config.GATE_TIME};')
+			#self.inst.write('TRIG:SOUR IMM; COUN MAX;')
 			self.inst.write('SAMP:COUN MAX')		
 
 

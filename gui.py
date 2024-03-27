@@ -17,9 +17,15 @@ import time
 
 class MyApp(tk.Tk):
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, data_name, *args, **kwargs):
 
 		tk.Tk.__init__(self, *args, **kwargs)
+
+		thetime = time.strftime('%H%M%S')
+		if data_name[-1] != '_':
+			data_name += '_'
+		self.allan_file = data_name+thetime+'_allan.txt'
+		self.time_series_file = data_name+thetime+'_timeseries.txt'
 		
 		self.context = zmq.Context()
 		self.socket = self.context.socket(zmq.SUB)
@@ -75,16 +81,18 @@ class MyApp(tk.Tk):
 			 							y=self.f[-self.time_series_record_length:])
 		else:
 			self.time_series_fig.redraw(x=self.t,y=self.f)
+		np.savetxt('./data/'+self.time_series_file, np.array([self.t,self.f]).T)
 		self.after(950 * config.TIME_BETWEEN_READS, self.read_data_stream)
 
 	def update_allan_dev(self):
 
 		t = time.time()
 		if len(self.f) > 2:
-			taus, ad, ade, ns = at.oadev(self.f, rate=1/config.GATE_TIME, data_type='freq')
+			taus, ad, ade, ns = at.oadev(self.f/self.f[0], rate=1/config.GATE_TIME, data_type='freq')
 			self.allan_dev_fig.redraw(x=taus, y=ad)
 		print(time.time()-t)
 		
+		np.savetxt('./data/'+self.allan_file, np.array([taus,ad,ade]).T)
 		self.after(self.allan_update_time * 1000, self.update_allan_dev)
 
 
@@ -125,5 +133,12 @@ class FigureFrame(tk.Frame):
 
 if __name__ == '__main__':
 
-	app = MyApp()
+	import sys
+
+	if len(sys.argv) > 1:
+		data_name = sys.argv[1]
+	else:
+		data_name = 'foo'
+
+	app = MyApp(data_name)
 	app.mainloop()
