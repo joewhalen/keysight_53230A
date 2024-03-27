@@ -3,6 +3,7 @@ import zmq
 import config
 from time import sleep
 from numpy.random import default_rng
+import argparse
 
 
 class Counter(object):
@@ -51,15 +52,22 @@ class Counter(object):
 
 				sleep(config.TIME_BETWEEN_READS)
 
+class CounterParser(argparse.ArgumentParser):
+	def __init__(self):
+		argparse.ArgumentParser.__init__(self)
+		self.add_argument('-v', '--virtual', help='Virtual counter mode.',
+					action='store_true')
+
+
 
 if __name__ == '__main__':
 
-	import sys
-
-	virtual = False
-	if len(sys.argv) > 1:
-		if sys.argv[1] == '-v':
-			virtual = True
+	parser = CounterParser()
+	args = parser.parse_args()
 	
-	myCounter = Counter(virtual)
+	if args.virtual:
+		print('Using Virtual Counter')
+		myCounter = Counter(virtual=True)
+	else:
+		myCounter = Counter()
 	myCounter.start_stream()
